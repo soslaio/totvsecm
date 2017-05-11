@@ -5,25 +5,31 @@ from zeep import Client
 
 
 class WorkflowEngineService:
-    def __init__(self, url, user, password, companyId):
+    def __init__(self, url, user, password, company_id):
         self.url = url
         self.client = Client(self.url)
         self.user = user
         self.password = password
-        self.companyId = companyId
+        self.company_id = company_id
 
-    def getCardData(self, data):
+    def get_card_data(self, data):
         """Transforma o dicionário em parâmetros."""
-        keyValueDtoArray = self.client.get_type('ns1:keyValueDtoArray')
-        keyValueDto = self.client.get_type('ns1:keyValueDto')
-        fields = []
-        for k, v in data.items():
-            field = keyValueDto(key=k, value=v)
-            fields.append(field)
-        parametros = keyValueDtoArray(item=fields)
-        return parametros
+        if bool(data):
+            # Obtém classes do webservice.
+            kv_dto_array = self.client.get_type('ns1:keyValueDtoArray')
+            kv_dto = self.client.get_type('ns1:keyValueDto')
 
-    def getDocumentArray(self, data):
+            # Transforma o dicionário recebido nos objetos do webservice.
+            fields = []
+            for key, value in data.items():
+                field = kv_dto(key=key, value=value)
+                fields.append(field)
+            parametros = kv_dto_array(item=fields)
+            return parametros
+        else:
+            return {}
+
+    def get_document_array(self, data):
         """Transforma o dicionário com informações dos anexos no tipo Document Array nativo do webservice ."""
         # Instanciamento dos tipos de dados.
         attachment_type = self.client.get_type('ns1:attachment')
@@ -63,58 +69,75 @@ class WorkflowEngineService:
         document_array = documents_type(item=documents)
         return document_array
 
-    def getCardValue(self, processInstanceId, userId, cardFieldName):
+    def get_card_value(self, process_instance_id, user_id, card_field_name):
         """Retorna o valor de um campo da ficha.
 
         Args:
-            processInstanceId (int): Número da solicitação.
-            userId (str): Matricula do colaborador.
-            cardFieldName(str): Nome do campo da ficha.
+            process_instance_id (int): Número da solicitação.
+            user_id (str): Matricula do colaborador.
+            card_field_name(str): Nome do campo da ficha.
 
         Returns:
             str: Valor do campo.
         """
-        result = self.client.service.getCardValue(self.user, self.password, self.companyId, processInstanceId, userId,
-                                                  cardFieldName)
+        result = self.client.service.getCardValue(self.user, self.password, self.company_id, process_instance_id,
+                                                  user_id, card_field_name)
         return result
 
-    def getInstanceCardData(self, processInstanceId, userId):
-        """Retorna o valor dos campos da ficha de uma solicitação."""
-        result = self.client.service.getInstanceCardData(self.user, self.password, self.companyId, userId,
-                                                         processInstanceId)
+    def get_instance_card_data(self, process_instance_id, user_id):
+        """Retorna o valor dos campos da ficha de uma solicitação.
+
+        Args:
+            process_instance_id(): .
+            user_id(): .
+        """
+        result = self.client.service.getInstanceCardData(self.user, self.password, self.company_id, user_id,
+                                                         process_instance_id)
         return result
 
-    def saveAndSendTaskClassic(self, processInstanceId, choosedState, colleagueIds, comments, userId, dcardData,
-                               managerMode=False, threadSequence=0, completeTask=True):
-        """Movimenta solicitação para próxima atividade e retorna um array de objeto com chave e valor."""
-        result = self.client.service.saveAndSendTaskClassic(self.user, self.password, self.companyId, processInstanceId,
-                                                            choosedState, colleagueIds, comments, userId, completeTask,
-                                                            attachments={}, cardData=self.getCardData(dcardData),
-                                                            appointment={}, managerMode=managerMode,
-                                                            threadSequence=threadSequence)
+    def save_and_send_task_classic(self, process_instance_id, choosed_state, colleague_ids, comments, user_id,
+                                   card_data, manager_mode=False, thread_sequence=0, complete_task=True):
+        """Movimenta solicitação para próxima atividade e retorna um array de objeto com chave e valor.
+        
+        Args:
+            process_instance_id(): .
+            choosed_state(): .
+            colleague_ids(): .
+            comments(): .
+            user_id(): .
+            card_data(): .
+            manager_mode(): .
+            thread_sequence(): .
+            complete_task(): .
+        """
+        result = self.client.service.saveAndSendTaskClassic(self.user, self.password, self.company_id,
+                                                            process_instance_id, choosed_state, colleague_ids, comments,
+                                                            user_id, complete_task, attachments={},
+                                                            cardData=self.get_card_data(card_data), appointment={},
+                                                            managerMode=manager_mode, threadSequence=thread_sequence)
         return result
 
-    def startProcessClassic(self, processId, userId, colleagueIds, dcardData, attachments, comments, completeTask=True,
-                            choosedState=0, managerMode=False):
+    def start_process_classic(self, process_id, user_id, colleague_ids, card_data, comments, attachments=None,
+                              complete_task=True, choosed_state=0, manager_mode=False):
         """Inicia uma solicitação e retorna um array de objeto com chave e valor.
 
         Args:
-            processId (str): Código do processo.
-            userId (str): Matrícula do colaborador que vai iniciar a solicitação.
-            colleagueIds(list): Colaborador que receberá a tarefa.
-            dcardData(dict): Dados da ficha dicionarizados.
+            process_id(str): Código do processo.
+            user_id(str): Matrícula do colaborador que vai iniciar a solicitação.
+            colleague_ids(list): Colaborador que receberá a tarefa.
+            card_data(dict): Dados da ficha dicionarizados.
             comments(str): Comentários.
             attachments(dict): Dicionário com nome e conteúdo lido dos arquivos anexos.
-            completeTask(bool): Indica se deve completar a tarefa (True) ou somente salvar (False).
-            choosedState(int): Número da atividade.
-            managerMode(bool): Indica se colaborador esta iniciando a solicitação como gestor do processo.
+            complete_task(bool): Indica se deve completar a tarefa (True) ou somente salvar (False).
+            choosed_state(int): Número da atividade.
+            manager_mode(bool): Indica se colaborador esta iniciando a solicitação como gestor do processo.
 
         Returns:
             list: Lista com informações do objeto criado.
         """
-        result = self.client.service.startProcessClassic(self.user, self.password, self.companyId, processId,
-                                                         choosedState, colleagueIds, comments, userId, completeTask,
-                                                         attachments=self.getDocumentArray(attachments),
-                                                         cardData=self.getCardData(dcardData), appointment={},
-                                                         managerMode=managerMode)
+        result = self.client.service.startProcessClassic(self.user, self.password, self.company_id, process_id,
+                                                         choosed_state, colleague_ids, comments, user_id, complete_task,
+                                                         attachments=self.get_document_array(attachments),
+                                                         cardData=self.get_card_data(card_data), appointment={},
+                                                         managerMode=manager_mode)
         return result

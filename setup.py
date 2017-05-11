@@ -9,7 +9,7 @@ setup(name='totvsecm',
       author='soslaio',
       author_email='contato@soslaio.com',
       license='MIT',
-      packages=['zeep'],
+      packages=['totvsecm'],
       install_requires=[
           'zeep',
       ],
