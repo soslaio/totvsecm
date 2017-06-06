@@ -126,6 +126,19 @@ class WorkflowEngineService:
                                                   self.user_id, card_field_name)
         return result
 
+    def get_histories(self, process_instance_id):
+        """Retorna lista de históricos de um processo.
+
+        Args:
+            process_instance_id(int): Número da solicitação.
+
+        Returns:
+            list: Lista com as informações do formulário.
+        """
+        result = self.client.service.getHistories(self.user, self.password, self.company_id, self.user_id,
+                                                  process_instance_id)
+        return result
+
     def get_instance_card_data(self, process_instance_id):
         """Retorna o valor dos campos da ficha de uma solicitação.
 
