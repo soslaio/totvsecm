@@ -160,7 +160,7 @@ class WorkflowEngineService:
             process_instance_id(int): Número da solicitação.
             choosed_state(int): Número da atividade.
             colleague_ids(list): Colaborador que receberá a tarefa.
-            comments(str): Comentários.
+            comments(unicode): Comentários.
             card_data(dict): Dados da ficha.
             manager_mode(bool): Indica se colaborador esta executando a tarefa como gestor do processo.
             thread_sequence(int): Indica se existe atividade paralela no processo. Se não existir o valor é 0 (zero),
