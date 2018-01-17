@@ -18,8 +18,12 @@ class WorkflowEngineService:
         """Transforma o dicionário em parâmetros."""
         if bool(data):
             # Obtém classes do webservice.
-            kv_dto_array = self.client.get_type('ns0:keyValueDtoArray')
-            kv_dto = self.client.get_type('ns0:keyValueDto')
+            try:
+                kv_dto_array = self.client.get_type('ns0:keyValueDtoArray')
+                kv_dto = self.client.get_type('ns0:keyValueDto')
+            except ValueError:
+                kv_dto_array = self.client.get_type('ns1:keyValueDtoArray')
+                kv_dto = self.client.get_type('ns1:keyValueDto')
 
             # Transforma o dicionário recebido nos objetos do webservice.
             fields = []
@@ -34,9 +38,15 @@ class WorkflowEngineService:
     def __get_document_array(self, data):
         """Transforma o dicionário com informações dos anexos no tipo Document Array nativo do webservice ."""
         # Instanciamento dos tipos de dados.
-        attachment_type = self.client.get_type('ns0:attachment')
-        document_type = self.client.get_type('ns0:processAttachmentDto')
-        documents_type = self.client.get_type('ns0:processAttachmentDtoArray')
+        try:
+            attachment_type = self.client.get_type('ns0:attachment')
+            document_type = self.client.get_type('ns0:processAttachmentDto')
+            documents_type = self.client.get_type('ns0:processAttachmentDtoArray')
+        except ValueError:
+            attachment_type = self.client.get_type('ns1:attachment')
+            document_type = self.client.get_type('ns1:processAttachmentDto')
+            documents_type = self.client.get_type('ns1:processAttachmentDtoArray')
+
         documents = []
 
         # Para todos os arquivos presentes na lista de arquivos.
