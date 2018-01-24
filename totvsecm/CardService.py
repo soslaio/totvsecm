@@ -20,7 +20,7 @@ class CardService:
             try:
                 cf_dto_array = self.client.get_type('ns0:cardFieldDtoArray')
                 cf_dto = self.client.get_type('ns0:cardFieldDto')
-            except ValueError:
+            except:
                 cf_dto_array = self.client.get_type('ns1:cardFieldDtoArray')
                 cf_dto = self.client.get_type('ns1:cardFieldDto')
 

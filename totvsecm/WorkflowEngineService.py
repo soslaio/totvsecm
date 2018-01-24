@@ -21,7 +21,7 @@ class WorkflowEngineService:
             try:
                 kv_dto_array = self.client.get_type('ns0:keyValueDtoArray')
                 kv_dto = self.client.get_type('ns0:keyValueDto')
-            except ValueError:
+            except:
                 kv_dto_array = self.client.get_type('ns1:keyValueDtoArray')
                 kv_dto = self.client.get_type('ns1:keyValueDto')
 
@@ -42,7 +42,7 @@ class WorkflowEngineService:
             attachment_type = self.client.get_type('ns0:attachment')
             document_type = self.client.get_type('ns0:processAttachmentDto')
             documents_type = self.client.get_type('ns0:processAttachmentDtoArray')
-        except ValueError:
+        except:
             attachment_type = self.client.get_type('ns1:attachment')
             document_type = self.client.get_type('ns1:processAttachmentDto')
             documents_type = self.client.get_type('ns1:processAttachmentDtoArray')
