@@ -1,3 +1,1 @@
-# -*- coding: utf-8 -*-
-
-import WorkflowEngineService
+# Just another python module

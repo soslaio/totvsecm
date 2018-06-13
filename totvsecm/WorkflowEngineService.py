@@ -82,6 +82,23 @@ class WorkflowEngineService:
         document_array = documents_type(item=documents)
         return document_array
 
+    def calculate_deadline_hours(self, data, segundos, prazo, period_id):
+        """Calcula um prazo a partir de uma data com base no expediente 
+        e feriados cadastrados no produto passando o prazo em horas.
+
+         Args:
+            data(str): Data no formato yyy-MM-dd.
+            segundos(int): Quantidade de segundos após a meia noite.
+            prazo(int): Prazo que será aplicado em horas.
+            period_id(str): Código de Expediente.
+
+        Returns:
+            str: Objeto DeadLineDto que contem variáveis com a data e hora.
+        """
+        result = self.client.service.calculateDeadLineHours(self.user, self.password, self.company_id, self.user_id,
+                                                            data, segundos, prazo, period_id)
+        return result
+
     def cancel_instance(self, process_instance_id, cancel_text):
         """Cancela uma solicitação.
 
