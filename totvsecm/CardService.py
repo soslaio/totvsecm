@@ -24,11 +24,13 @@ class CardService:
                 cf_dto_array = self.client.get_type('ns1:cardFieldDtoArray')
                 cf_dto = self.client.get_type('ns1:cardFieldDto')
 
-            # Transforma o dicionário recebido nos objetos do webservice.
             fields = []
-            for key, value in data.items():
-                field = cf_dto(field=key, value=value)
+            for elemento in data:
+                item = elemento['item']
+                field = cf_dto(field=item[0], value=item[1])
                 fields.append(field)
+
+            # Transforma o dicionário recebido nos objetos do webservice.
             parametros = cf_dto_array(item=fields)
             return parametros
         else:
