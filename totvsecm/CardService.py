@@ -15,6 +15,7 @@ class CardService:
 
     def __get_card_data(self, data):
         """Transforma o dicionário em parâmetros."""
+
         if bool(data):
             # Obtém classes do webservice.
             try:
@@ -25,9 +26,8 @@ class CardService:
                 cf_dto = self.client.get_type('ns1:cardFieldDto')
 
             fields = []
-            for elemento in data:
-                item = elemento['item']
-                field = cf_dto(field=item[0], value=item[1])
+            for k, v in data.items():
+                field = cf_dto(field=k, value=v)
                 fields.append(field)
 
             # Transforma o dicionário recebido nos objetos do webservice.
