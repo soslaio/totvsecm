@@ -1,5 +1,4 @@
-﻿# -*- coding: utf-8 -*-
-
+﻿
 from sys import getsizeof
 from zeep import Client
 
