@@ -44,55 +44,9 @@ class BaseService:
         return None
 
     @property
-    def atividade_atual(self):
-        """Retorna a atividade no qual o processo se encontra atualmente."""
-        assert self.numero_solicitacao is not None, 'Informe o número do processo cuja atividade atual deseja.'
-        rs = self.__workflowservice.get_all_active_states(self.numero_solicitacao)
-        if rs:
-            return [int(n) for n in rs]
-        else:
-            return [-1]
-
-    @property
-    def finalizado(self):
-        """Indica se o processo foi finalizado."""
-        return self.atividade_atual == [-1]
-
-    @property
-    def historico(self):
-        assert self.numero_solicitacao is not None, 'Informe o número do processo cujo histórico deseja.'
-        rs = self.__workflowservice.get_histories(self.numero_solicitacao)
-        return rs
-
-    @property
-    def responsavel_atual(self):
-        return self.historico_tratado[0]['colleague_id']
-
-    @property
-    def historico_tratado(self):
-        historico = self.historico
-        rs = list()
-        for etapa in historico:
-            for task in etapa.tasks:
-                data_hora = task.taskCompletionDate + timedelta(seconds=task.taskCompletionHour) \
-                    if task.taskCompletionDate else None
-                data_hora_formatada = data_hora.strftime('%d/%m/%Y %H:%M') if task.taskCompletionDate \
-                    else u'Tarefa não finalizada'
-                rs.append({
-                    'data_hora': data_hora,
-                    'data_hora_formatada': data_hora_formatada,
-                    'proxima_atividade': int(task.choosedSequence),
-                    'observacao': task.taskObservation,
-                    'colleague_id': task.colleagueId,
-                    'texto': task.historCompleteColleague,
-                    'nome_responsavel': task.historCompleteColleague.split('\n')[0]
-                })
-        return rs
-
-    @property
     def anexos(self):
         """Retorna os anexos do processo. Não inclui os conteúdos por uma questão de otimização."""
-        assert self.numero_solicitacao is not None, 'Informe o número do processo cujos anexos deseja.'
+        assert self.numero_solicitacao is not None, 'Informe o número da solicitação cujos anexos deseja.'
 
         attachments = {}
 
@@ -125,7 +79,155 @@ class BaseService:
                 }
         return attachments
 
+    @property
+    def atividade_atual(self):
+        """Retorna a atividade no qual o processo se encontra atualmente."""
+        assert self.numero_solicitacao is not None, 'Informe o número do processo cuja atividade atual deseja.'
+        rs = self.__workflowservice.get_all_active_states(self.numero_solicitacao)
+        if rs:
+            return [int(n) for n in rs]
+        else:
+            return [-1]
+
+    @property
+    def finalizado(self):
+        """Indica se o processo foi finalizado."""
+        return self.atividade_atual == [-1]
+
+    @property
+    def historico(self):
+        """Histórico da solicitação."""
+        assert self.numero_solicitacao is not None, 'Informe o número do processo cujo histórico deseja.'
+        rs = self.__workflowservice.get_histories(self.numero_solicitacao)
+        return rs
+
+    @property
+    def historico_tratado(self):
+        """Retorna o histórico da solicitação de forma tratada."""
+        historico = self.historico
+        rs = list()
+        for etapa in historico:
+            for task in etapa.tasks:
+                data_hora = task.taskCompletionDate + timedelta(seconds=task.taskCompletionHour) \
+                    if task.taskCompletionDate else None
+                data_hora_formatada = data_hora.strftime('%d/%m/%Y %H:%M') if task.taskCompletionDate \
+                    else u'Tarefa não finalizada'
+                rs.append({
+                    'data_hora': data_hora,
+                    'data_hora_formatada': data_hora_formatada,
+                    'proxima_atividade': int(task.choosedSequence),
+                    'observacao': task.taskObservation,
+                    'colleague_id': task.colleagueId,
+                    'texto': task.historCompleteColleague,
+                    'nome_responsavel': task.historCompleteColleague.split('\n')[0]
+                })
+        return rs
+
+    @property
+    def responsavel_atual(self):
+        """Id do responsável atual da solicitação."""
+        return self.historico_tratado[0]['colleague_id']
+
+    def atualizar_formulario(self, dados_formulario):
+        """Atualiza o formulário da solicitação.
+
+        Args:
+            dados_formulario(dict): Dicionário com os dados a serem atualizados no formulário.
+
+        Returns:
+            dict: Resultado da atualização da solicitação.
+        """
+        assert self.numero_ficha is not None, 'Informe o número da ficha que deseja atualizar.'
+        result = self.__cardservice.update_card_data(self.numero_ficha, dados_formulario)
+        return result
+
+    def avancar(self, n_atividade, colleague_ids=None, manager_mode=False, observacao=u'Avançado automaticamente'):
+        """Avança o processo para uma determinada atividade.
+
+        Args:
+            n_atividade(int): Número da atividade para qual a solicitação deve ser avançada.
+            colleague_ids(list): Lista de usuários que receberão a solicitação.
+            manager_mode(bool): Indica se colaborador esta executando a tarefa como gestor do processo.
+            observacao(unicode): Comentários da movimentação.
+
+        Returns:
+            dict: Resultado do avanço da solicitação.
+        """
+        user = colleague_ids if colleague_ids else self.usuario
+        assert self.numero_solicitacao is not None, 'Informe o número da solicitação que deseja avançar.'
+        result = self.__workflowservice.save_and_send_task_classic(self.numero_solicitacao, n_atividade, [user],
+                                                                   observacao, {}, manager_mode=manager_mode)
+        return result
+
+    def calcular_prazo(self, data, segundos, prazo, period_id):
+        """Calcula o prazo de uma atividade considerando um expediente.
+
+        Args:
+            data(str): Data no formato yyy-MM-dd.
+            segundos(int): Quantidade de segundos após a meia noite.
+            prazo(int): Prazo que será aplicado em horas.
+            period_id(str): Código de expediente.
+
+        Returns:
+            dict: Resultado do cálculo de prazo.
+        """
+        prazo = self.__workflowservice.calculate_deadline_hours(data=data, segundos=segundos, prazo=prazo,
+                                                                period_id=period_id)
+        prazo_str = prazo.__str__().replace('\'', '"')
+        prazo_dict = json.loads(prazo_str)
+        return prazo_dict
+
+    def cancelar_solicitacao(self, mensagem):
+        """Cancela a solicitação.
+
+        Args:
+            mensagem(str): Mensagem de cancelamento para o histórico.
+
+        Returns:
+            dict: Resultado do cancelamento da solicitação.
+        """
+        assert self.numero_solicitacao is not None, 'Informe o número do processo que deseja cancelar.'
+        result = self.__workflowservice.cancel_instance(self.numero_solicitacao, mensagem)
+        return result
+
+    def carregar_solicitacao(self):
+        """Carrega as informações da solicitação no objeto do serviço, incluindo número da ficha e ID do processo.
+
+        Returns:
+            dict: Dados do formulário da solicitação.
+        """
+        assert self.numero_solicitacao is not None, 'Informe o número do processo que deseja carregar.'
+
+        # Carrega o número da ficha, que é um dos anexos da solicitação.
+        attachments_info = self.__workflowservice.get_attachments(self.numero_solicitacao)
+        for attachment in attachments_info:
+            attachment_sequence = int(attachment['attachmentSequence'])
+            if attachment_sequence == 1:
+                self.numero_ficha = int(attachment['documentId'])
+
+        # Carrega as informações do formulário como atributos da solicitação.
+        result = self.__workflowservice.get_instance_card_data(self.numero_solicitacao)
+        for item in result:
+            attribute = item['item'][0]
+            value = item['item'][1]
+            setattr(self, attribute, value)
+
+            # Carrega o id_processo. Poderia ser feito de outra forma
+            # mais elegante, mas assim os editores não apontam erro.
+            if attribute == 'WKDef':
+                self.id_processo = value
+
+        return result
+
     def filtrar_historico(self, sequencia, excluir_automaticos=True):
+        """Filtra o histórico da solicitação a partir dos identificadores das sequências.
+
+        sequencia(list): Lista de sequências a serem filtradas do histórico.
+        excluir_automaticos(bool): Indica se as movimentações automáticas devem ser excluídas do histórico.
+
+        Returns:
+            list: Resultado do filtro do histórico.
+        """
         rs = [h for h in self.historico_tratado if h['proxima_atividade'] in sequencia]
 
         # Aplica o filtro caso seja necessário excluir os históricos automáticos.
@@ -148,7 +250,7 @@ class BaseService:
             gestor_processo(bool): Indica se a solicitação está sendo iniciada por um gestor do processo.
 
         Returns:
-            str: Resultado da inicialização da solicitação.
+            dict: Resultado da inicialização da solicitação.
         """
         assert self.id_processo is not None, 'Informe o ID do processo que deseja iniciar.'
         result = self.__workflowservice.start_process_classic(process_id=self.id_processo,
@@ -166,63 +268,20 @@ class BaseService:
             erro = self.__analisar_retorno(result, 'ERROR')
             raise Exception(erro)
 
-    def carregar_solicitacao(self):
-        """Carrega as informações da solicitacao, incluindo número da ficha e ID do processo."""
-        assert self.numero_solicitacao is not None, 'Informe o número do processo que deseja carregar.'
-
-        # Carrega o número da ficha.
-        attachments_info = self.__workflowservice.get_attachments(self.numero_solicitacao)
-        for attachment in attachments_info:
-            attachment_sequence = int(attachment['attachmentSequence'])
-            if attachment_sequence == 1:
-                self.numero_ficha = int(attachment['documentId'])
-
-        # Carrega as informações do formulário como atributos do processo.
-        result = self.__workflowservice.get_instance_card_data(self.numero_solicitacao)
-        for item in result:
-            attribute = item['item'][0]
-            value = item['item'][1]
-            setattr(self, attribute, value)
-
-            # Carrega o id_processo. Poderia ser feito de outra forma
-            # mais elegante, mas assim os editores não apontam erro.
-            if attribute == 'WKDef':
-                self.id_processo = value
-
-        return result
-
-    def atualizar_formulario(self, dados_formulario):
-        """Atualiza o formulário da solicitação."""
-        assert self.numero_ficha is not None, 'Informe o número da ficha que deseja atualizar.'
-        result = self.__cardservice.update_card_data(self.numero_ficha, dados_formulario)
-        return result
-
-    def cancelar_solicitacao(self, mensagem):
-        """Cancela o a solicitação."""
-        assert self.numero_solicitacao is not None, 'Informe o número do processo que deseja cancelar.'
-        result = self.__workflowservice.cancel_instance(self.numero_solicitacao, mensagem)
-        return result
-
-    def avancar(self, n_atividade, colleague_ids=None, manager_mode=False, observacao=u'Avançado automaticamente'):
-        """Avança o processo para uma determinada atividade."""
-        user = colleague_ids if colleague_ids else self.usuario
-        assert self.numero_solicitacao is not None, 'Informe o número do processo que deseja avançar.'
-        result = self.__workflowservice.save_and_send_task_classic(self.numero_solicitacao, n_atividade, [user],
-                                                                   observacao, {}, manager_mode=manager_mode)
-        return result
-
-    def calcular_prazo(self, data, segundos, prazo, period_id):
-        """Calcula o prazo de uma atividade considerando um expediente."""
-        prazo = self.__workflowservice.calculate_deadline_hours(data=data, segundos=segundos, prazo=prazo,
-                                                                period_id=period_id)
-        prazo_str = prazo.__str__().replace('\'', '"')
-        prazo_dict = json.loads(prazo_str)
-        return prazo_dict
-
     def movimentar(self, origem, destino, observacao='Movimentado automaticamente', **campos_atualizar):
-        """Movimenta um processo de uma determinada atividade para outra, verificando antes a atividade de origem
-        e possibilitando atualizar campos do formulário, caso necessário para o avanço."""
-        carddata = self.carregar()
+        """Movimenta um processo de uma determinada atividade para outra, verificando antes a atividade de origem e
+           possibilitando atualizar campos do formulário, caso necessário para o avanço.
+
+        Args:
+            origem(int): Número da atividade de origem, de onde a solicitação vai sair.
+            destino(int): Número da atividade de destino, para onde a solicitação vai.
+            observacao(str): Comentários da movimentação.
+            campos_atualizar(dict): Dados a serem atualizados no formulário no momento da movimentação.
+
+        Returns:
+            dict: Resultado da movimentação da solicitação.
+        """
+        carddata = self.carregar_solicitacao()
         if not self.finalizado:
             if self.atividade_atual[0] == origem:
                 # Caso haja campos para atualizar antes de avançar o processo.
