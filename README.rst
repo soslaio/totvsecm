@@ -1,4 +1,6 @@
-# totvsecm
+========================
+totvsecm
+========================
 
 API para acesso aos Webservices do TOTVS ECM.
 
@@ -10,11 +12,13 @@ Highlights:
 Instalação
 ------------
 
-    pip install totvsecm
+.. code-block:: bash
 
+    pip install totvsecm
 
 Uso
 ------------
+.. code-block:: python
 
     from totvsecm import BaseService
 
@@ -26,8 +30,9 @@ Uso
         id_processo='selecao_jedi'
     )
 
-
 Para iniciar um processo use:
+
+.. code-block:: python
 
     servico.iniciar(
         dados_formulario=dict(nome='Anakin', sobrenome='Skywalker'),

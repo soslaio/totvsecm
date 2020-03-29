@@ -1,9 +1,9 @@
 ﻿
+import re
 from setuptools import setup
 
-with open('README.md') as fh:
-    long_description = re.sub(
-        '^.. start-no-pypi.*^.. end-no-pypi', '', fh.read(), flags=re.M | re.S)
+with open('README.rst') as fh:
+    long_description = fh.read()
 
 setup(name='totvsecm',
       version='1.5.0',
