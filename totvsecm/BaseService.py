@@ -8,20 +8,32 @@ from CardService import CardService
 
 
 class BaseService:
-    def __init__(self, servidor, usuario, senha, id_responsavel, id_processo=None, id_empresa=1, numero_ecm=None,
-                 ficha=None):
+    def __init__(self, url_servidor, username_tbc, senha_tbc, username_ecm, id_processo=None, numero_solicitacao=None,
+                 numero_ficha=None, id_empresa=1):
+        """Inicia uma instância da classe básica de conexão com o webservice do TOTVS ECM.
+
+        Args:
+            url_servidor (int): URL do servidor TBC, incluindo o protocolo, o domínio e a porta, caso necessário.
+            username_tbc(str): Username do usuário do TBC.
+            senha_tbc(str): Senha do usuário do TBC.
+            username_ecm(str): Username do usuário responsável no ECM.
+            id_processo(str): Identificador do processo no ECM.
+            numero_solicitacao(int): Número da solicitação no ECM.
+            numero_ficha(str): Número da ficha relacionada à solicitação no ECM.
+            id_empresa(str): Identificador da empresa no ECM.
+        """
         self.id_processo = id_processo
-        self.numero_ecm = numero_ecm
-        self.ficha = ficha
-        self.usuario = usuario
+        self.numero_solicitacao = numero_solicitacao
+        self.numero_ficha = numero_ficha
+        self.usuario = username_tbc
 
         # instâncias dos serviços
-        self.__workflowservice = WorkflowEngineService(servidor, user=usuario, password=senha, company_id=id_empresa,
-                                                       user_id=id_responsavel)
-        self.__documentservice = DocumentService(servidor, user=usuario, password=senha, company_id=id_empresa,
-                                                 user_id=id_responsavel)
-        self.__cardservice = CardService(servidor, user=usuario, password=senha, company_id=id_empresa,
-                                         user_id=id_responsavel)
+        self.__workflowservice = WorkflowEngineService(url_servidor, user=username_tbc, password=senha_tbc,
+                                                       company_id=id_empresa, user_id=username_ecm)
+        self.__documentservice = DocumentService(url_servidor, user=username_tbc, password=senha_tbc,
+                                                 company_id=id_empresa, user_id=username_ecm)
+        self.__cardservice = CardService(url_servidor, user=username_tbc, password=senha_tbc, company_id=id_empresa,
+                                         user_id=username_ecm)
 
     @staticmethod
     def __analisar_retorno(data, pkey):
@@ -34,8 +46,8 @@ class BaseService:
     @property
     def atividade_atual(self):
         """Retorna a atividade no qual o processo se encontra atualmente."""
-        assert self.numero_ecm is not None, 'Informe o número do processo cuja atividade atual deseja.'
-        rs = self.__workflowservice.get_all_active_states(self.numero_ecm)
+        assert self.numero_solicitacao is not None, 'Informe o número do processo cuja atividade atual deseja.'
+        rs = self.__workflowservice.get_all_active_states(self.numero_solicitacao)
         if rs:
             return [int(n) for n in rs]
         else:
@@ -48,8 +60,8 @@ class BaseService:
 
     @property
     def historico(self):
-        assert self.numero_ecm is not None, 'Informe o número do processo cujo histórico deseja.'
-        rs = self.__workflowservice.get_histories(self.numero_ecm)
+        assert self.numero_solicitacao is not None, 'Informe o número do processo cujo histórico deseja.'
+        rs = self.__workflowservice.get_histories(self.numero_solicitacao)
         return rs
 
     @property
@@ -80,12 +92,12 @@ class BaseService:
     @property
     def anexos(self):
         """Retorna os anexos do processo. Não inclui os conteúdos por uma questão de otimização."""
-        assert self.numero_ecm is not None, 'Informe o número do processo cujos anexos deseja.'
+        assert self.numero_solicitacao is not None, 'Informe o número do processo cujos anexos deseja.'
 
         attachments = {}
 
         # Consulta a lista de documentos relacionados ao processo.
-        attachments_info = self.__workflowservice.get_attachments(self.numero_ecm)
+        attachments_info = self.__workflowservice.get_attachments(self.numero_solicitacao)
         for attachment in attachments_info:
             attachment_sequence = int(attachment['attachmentSequence'])
 
@@ -122,9 +134,22 @@ class BaseService:
 
         return rs
 
-    def iniciar(self, dados_formulario, comentarios, anexos, ids_destinatarios, completar=True, numero_atividade=0,
-                gestor_processo=False):
-        """Inicia um processo."""
+    def iniciar_solicitacao(self, dados_formulario, ids_destinatarios, comentarios, anexos=None, completar=True,
+                            numero_atividade=0, gestor_processo=False):
+        """Inicia uma solicitação no ECM.
+
+        Args:
+            dados_formulario(dict): Número da solicitação.
+            ids_destinatarios(list):
+            comentarios(str): Comentário que fica registrado como
+            anexos(dict): Dicionário com nome e conteúdo dos anexos.
+            completar(bool): Indica se a tarefa deve ser completada ou apenas salva.
+            numero_atividade(int): Número da atividade.
+            gestor_processo(bool): Indica se a solicitação está sendo iniciada por um gestor do processo.
+
+        Returns:
+            str: Resultado da inicialização da solicitação.
+        """
         assert self.id_processo is not None, 'Informe o ID do processo que deseja iniciar.'
         result = self.__workflowservice.start_process_classic(process_id=self.id_processo,
                                                               colleague_ids=ids_destinatarios,
@@ -134,26 +159,26 @@ class BaseService:
                                                               manager_mode=gestor_processo)
         iprocess = self.__analisar_retorno(result, 'iProcess')
         if iprocess:
-            self.numero_ecm = iprocess
-            self.ficha = self.__analisar_retorno(result, 'WDNrDocto')
+            self.numero_solicitacao = iprocess
+            self.numero_ficha = self.__analisar_retorno(result, 'WDNrDocto')
             return result
         else:
             erro = self.__analisar_retorno(result, 'ERROR')
             raise Exception(erro)
 
-    def carregar(self):
-        """Carrega as informações do processo, incluindo número da ficha e ID do processo."""
-        assert self.numero_ecm is not None, 'Informe o número do processo que deseja carregar.'
+    def carregar_solicitacao(self):
+        """Carrega as informações da solicitacao, incluindo número da ficha e ID do processo."""
+        assert self.numero_solicitacao is not None, 'Informe o número do processo que deseja carregar.'
 
         # Carrega o número da ficha.
-        attachments_info = self.__workflowservice.get_attachments(self.numero_ecm)
+        attachments_info = self.__workflowservice.get_attachments(self.numero_solicitacao)
         for attachment in attachments_info:
             attachment_sequence = int(attachment['attachmentSequence'])
             if attachment_sequence == 1:
-                self.ficha = int(attachment['documentId'])
+                self.numero_ficha = int(attachment['documentId'])
 
         # Carrega as informações do formulário como atributos do processo.
-        result = self.__workflowservice.get_instance_card_data(self.numero_ecm)
+        result = self.__workflowservice.get_instance_card_data(self.numero_solicitacao)
         for item in result:
             attribute = item['item'][0]
             value = item['item'][1]
@@ -167,22 +192,22 @@ class BaseService:
         return result
 
     def atualizar_formulario(self, dados_formulario):
-        """Atualiza o formulário do processo."""
-        assert self.ficha is not None, 'Informe o número da ficha que deseja atualizar.'
-        result = self.__cardservice.update_card_data(self.ficha, dados_formulario)
+        """Atualiza o formulário da solicitação."""
+        assert self.numero_ficha is not None, 'Informe o número da ficha que deseja atualizar.'
+        result = self.__cardservice.update_card_data(self.numero_ficha, dados_formulario)
         return result
 
-    def cancelar(self, mensagem):
-        """Cancela o processo."""
-        assert self.numero_ecm is not None, 'Informe o número do processo que deseja cancelar.'
-        result = self.__workflowservice.cancel_instance(self.numero_ecm, mensagem)
+    def cancelar_solicitacao(self, mensagem):
+        """Cancela o a solicitação."""
+        assert self.numero_solicitacao is not None, 'Informe o número do processo que deseja cancelar.'
+        result = self.__workflowservice.cancel_instance(self.numero_solicitacao, mensagem)
         return result
 
     def avancar(self, n_atividade, colleague_ids=None, manager_mode=False, observacao=u'Avançado automaticamente'):
         """Avança o processo para uma determinada atividade."""
         user = colleague_ids if colleague_ids else self.usuario
-        assert self.numero_ecm is not None, 'Informe o número do processo que deseja avançar.'
-        result = self.__workflowservice.save_and_send_task_classic(self.numero_ecm, n_atividade, [user],
+        assert self.numero_solicitacao is not None, 'Informe o número do processo que deseja avançar.'
+        result = self.__workflowservice.save_and_send_task_classic(self.numero_solicitacao, n_atividade, [user],
                                                                    observacao, {}, manager_mode=manager_mode)
         return result
 
