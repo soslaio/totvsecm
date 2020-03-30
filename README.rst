@@ -6,12 +6,10 @@ API para acesso aos Webservices do TOTVS ECM.
 
 Highlights:
  * Compatível com Python 2.7, 3.5, 3.6, 3.7.
- * Compatível com TBC e SBC.
-
+ * Compatível com a versão 48-EP12 82 do ECM.
 
 Instalação
 ------------
-
 .. code-block:: bash
 
     pip install totvsecm
@@ -23,10 +21,10 @@ Uso
     from totvsecm import BaseService
 
     servico = BaseService(
-        url_servidor='https://jedi_tbc_server',
-        username_tbc='quigonjinn',
-        senha_tbc='maytheforcebewithyou',
-        username_ecm='quigonjinn',
+        url_servidor='https://jedi_ecm_server',
+        usuario='quigonjinn',
+        senha='maytheforcebewithyou',
+        usuario_responsavel='quigonjinn',
         id_processo='selecao_jedi'
     )
 
@@ -34,8 +32,8 @@ Para iniciar um processo use:
 
 .. code-block:: python
 
-    servico.iniciar(
+    servico.iniciar_solicitacao(
         dados_formulario=dict(nome='Anakin', sobrenome='Skywalker'),
-        comentarios='Essa é a criança da profecia',
-        ids_destinatarios=['yoda']
+        ids_destinatarios=['yoda'],
+        comentarios='He is the chosen one'
     )

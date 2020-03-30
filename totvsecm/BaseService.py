@@ -8,15 +8,15 @@ from CardService import CardService
 
 
 class BaseService:
-    def __init__(self, url_servidor, username_tbc, senha_tbc, username_ecm, id_processo=None, numero_solicitacao=None,
+    def __init__(self, url_servidor, usuario, senha, usuario_responsavel, id_processo=None, numero_solicitacao=None,
                  numero_ficha=None, id_empresa=1):
         """Inicia uma instância da classe básica de conexão com o webservice do TOTVS ECM.
 
         Args:
             url_servidor (int): URL do servidor TBC, incluindo o protocolo, o domínio e a porta, caso necessário.
-            username_tbc(str): Username do usuário do TBC.
-            senha_tbc(str): Senha do usuário do TBC.
-            username_ecm(str): Username do usuário responsável no ECM.
+            usuario(str): Username do usuário do TBC.
+            senha(str): Senha do usuário do TBC.
+            usuario_responsavel(str): Username do usuário responsável no ECM.
             id_processo(str): Identificador do processo no ECM.
             numero_solicitacao(int): Número da solicitação no ECM.
             numero_ficha(str): Número da ficha relacionada à solicitação no ECM.
@@ -25,15 +25,15 @@ class BaseService:
         self.id_processo = id_processo
         self.numero_solicitacao = numero_solicitacao
         self.numero_ficha = numero_ficha
-        self.usuario = username_tbc
+        self.usuario = usuario
 
         # instâncias dos serviços
-        self.__workflowservice = WorkflowEngineService(url_servidor, user=username_tbc, password=senha_tbc,
-                                                       company_id=id_empresa, user_id=username_ecm)
-        self.__documentservice = DocumentService(url_servidor, user=username_tbc, password=senha_tbc,
-                                                 company_id=id_empresa, user_id=username_ecm)
-        self.__cardservice = CardService(url_servidor, user=username_tbc, password=senha_tbc, company_id=id_empresa,
-                                         user_id=username_ecm)
+        self.__workflowservice = WorkflowEngineService(url_servidor, user=usuario, password=senha,
+                                                       company_id=id_empresa, user_id=usuario_responsavel)
+        self.__documentservice = DocumentService(url_servidor, user=usuario, password=senha, company_id=id_empresa,
+                                                 user_id=usuario_responsavel)
+        self.__cardservice = CardService(url_servidor, user=usuario, password=senha, company_id=id_empresa,
+                                         user_id=usuario_responsavel)
 
     @staticmethod
     def __analisar_retorno(data, pkey):
