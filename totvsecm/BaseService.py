@@ -2,9 +2,9 @@
 import json
 from datetime import timedelta
 
-from WorkflowEngineService import WorkflowEngineService
-from DocumentService import DocumentService
-from CardService import CardService
+from .WorkflowEngineService import WorkflowEngineService
+from .DocumentService import DocumentService
+from .CardService import CardService
 
 
 class BaseService:
@@ -13,14 +13,14 @@ class BaseService:
         """Inicia uma instância da classe básica de conexão com o webservice do TOTVS ECM.
 
         Args:
-            url_servidor (int): URL do servidor TBC, incluindo o protocolo, o domínio e a porta, caso necessário.
-            usuario(str): Username do usuário do TBC.
-            senha(str): Senha do usuário do TBC.
+            url_servidor (str): URL do servidor ECM, incluindo o protocolo, o domínio e a porta, caso necessário.
+            usuario(str): Username do usuário do ECM.
+            senha(str): Senha do usuário do ECM.
             usuario_responsavel(str): Username do usuário responsável no ECM.
             id_processo(str): Identificador do processo no ECM.
             numero_solicitacao(int): Número da solicitação no ECM.
-            numero_ficha(str): Número da ficha relacionada à solicitação no ECM.
-            id_empresa(str): Identificador da empresa no ECM.
+            numero_ficha(int): Número da ficha relacionada à solicitação no ECM.
+            id_empresa(int): Identificador da empresa no ECM.
         """
         self.id_processo = id_processo
         self.numero_solicitacao = numero_solicitacao

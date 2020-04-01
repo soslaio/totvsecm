@@ -5,7 +5,7 @@ from zeep import Client
 
 class DocumentService:
     def __init__(self, server, user, password, company_id, user_id, process_id=None):
-        self.url = 'http://%s/webdesk/DocumentService?wsdl' % server
+        self.url = '%s/webdesk/DocumentService?wsdl' % server
         self.client = Client(self.url)
         self.user = user
         self.password = password

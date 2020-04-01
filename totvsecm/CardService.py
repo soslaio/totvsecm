@@ -4,7 +4,7 @@ from zeep import Client
 
 class CardService:
     def __init__(self, server, user, password, company_id, user_id, process_id=None):
-        self.url = 'http://%s/webdesk/CardService?wsdl' % server
+        self.url = '%s/webdesk/CardService?wsdl' % server
         self.client = Client(self.url)
         self.user = user
         self.password = password

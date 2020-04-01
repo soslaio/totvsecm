@@ -5,7 +5,7 @@ from zeep import Client
 
 class WorkflowEngineService:
     def __init__(self, server, user, password, company_id, user_id, process_id=None):
-        self.url = 'http://%s/webdesk/WorkflowEngineService?wsdl' % server
+        self.url = '%s/webdesk/WorkflowEngineService?wsdl' % server
         self.client = Client(self.url)
         self.user = user
         self.password = password
