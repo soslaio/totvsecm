@@ -253,6 +253,7 @@ class BaseService:
             dict: Resultado da inicialização da solicitação.
         """
         assert self.id_processo is not None, 'Informe o ID do processo que deseja iniciar.'
+        anexos = anexos if anexos else {}
         result = self.__workflowservice.start_process_classic(process_id=self.id_processo,
                                                               colleague_ids=ids_destinatarios,
                                                               card_data=dados_formulario, comments=comentarios,
